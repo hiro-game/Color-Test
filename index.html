@@ -28,7 +28,6 @@
             z-index: 1000; font-family: sans-serif; overflow: hidden;
         }
 
-        /* Vivaldi等のダークモード設定への配慮 */
         @media (prefers-color-scheme: dark) {
             .menu-container { background: #2d2d2d; border-color: #555; color: #eee; }
         }
@@ -36,14 +35,13 @@
         details summary {
             padding: 12px; cursor: pointer; font-weight: bold; background: #eee;
             text-align: center; list-style: none; border-bottom: 1px solid #ddd;
-            color: #333; /* 文字色は常に固定して視認性を確保 */
+            color: #333;
         }
         @media (prefers-color-scheme: dark) { details summary { background: #3c3c3c; color: #eee; } }
 
         .menu-content { padding: 15px; max-height: 75vh; overflow-y: auto; }
         .hidden { display: none; }
 
-        /* ヘッダー内アイコン */
         .content-header {
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #ddd;
@@ -62,24 +60,32 @@
 
         input[type="text"] { width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 12px; }
 
-        .manage-item { display: flex; align-items: center; gap: 5px; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px dashed #eee; }
+        .manage-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px dashed #eee; }
         .manage-item input { flex: 1; font-size: 11px; }
-        .del-btn { background: #fff5f5; color: #c00; border-color: #fcc; width: 24px; padding: 2px; }
+        .color-sample {
+            width: 24px; height: 24px; border: 1px solid #999; border-radius: 4px; cursor: pointer;
+            flex-shrink: 0;
+        }
 
-        /* プレビューと目的・使い方 */
+        #toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85); color: white; padding: 10px 24px;
+            border-radius: 30px; font-size: 13px; z-index: 2000;
+            opacity: 0; visibility: hidden; transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        #toast.show { opacity: 1; visibility: visible; bottom: 60px; }
+
         .preview-area { font-size: 48px; margin-bottom: 20px; font-weight: bold; border-left: 8px solid rgba(128,128,128,0.3); padding-left: 20px; }
         .preview-area br { display: block; content: ""; margin-top: 24px; }
-
         .page-intro { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid rgba(128,128,128,0.2); }
         .purpose-text { font-size: 18px; font-weight: bold; opacity: 0.8; margin-bottom: 10px; }
         .guide-text { font-size: 14px; line-height: 1.6; }
-
-        .hint-section { margin-top: 40px; }
-        .size-l { font-size: 28px; font-weight: bold; margin-top: 20px; }
-        .size-m { font-size: 16px; line-height: 1.6; margin-top: 10px; }
     </style>
 </head>
 <body>
+
+<div id="toast">コピーしました</div>
 
 <div class="preview-area">
     吾輩は猫である。<br>
@@ -90,9 +96,9 @@
 <div class="page-intro">
     <div class="purpose-text">【当ページの目的：小説閲覧時の配色確認シミュレーター】</div>
     <div class="guide-text">
-        文字を大きく表示した際に、目が疲れにくい「背景色と文字色の組み合わせ」を確認するためのページです。<br>
-        右上のメニューからプリセットを選択し、ご自身の読みやすい配色を探してください。<br>
-        ※このページは配色確認用です。実際のサイトの行間（高さ）を制御する機能は持っていません。
+        文字を大きく表示した際に、目が疲れにくい配色を確認するためのページです。<br>
+        右上のメニューからプリセットを選び、好みの読み心地を探してください。<br>
+        ※設定画面の「見本色」をクリックするとカラーコードをコピーできます。
     </div>
 </div>
 
@@ -100,25 +106,20 @@
     <details open>
         <summary>配色設定・管理 ▾</summary>
         <div class="menu-content">
-            
             <div id="main-view">
                 <div class="content-header">
                     <span style="font-size: 0.8em; opacity: 0.7;">配色を選択</span>
                     <span class="settings-icon" title="管理メニューへ" onclick="toggleView()">⚙</span>
                 </div>
-                
                 <div class="section-title">背景色</div>
                 <div id="bg-presets" class="btn-grid"></div>
-
                 <div class="section-title">文字色</div>
                 <div id="text-presets" class="btn-grid"></div>
-
                 <div class="section-title">フォント</div>
                 <div class="btn-grid">
                     <button onclick="setFont('serif')">明朝体</button>
                     <button onclick="setFont('sans-serif')">ゴシック</button>
                 </div>
-
                 <div class="section-title" style="margin-top:20px;">新しい色を追加</div>
                 <div class="input-group">
                     <input type="text" id="reg-name" placeholder="名前 (例: ユーザー1)">
@@ -135,20 +136,16 @@
 
             <div id="settings-view" class="hidden">
                 <div class="content-header">
-                    <span style="font-size: 0.8em; opacity: 0.7;">データ管理</span>
+                    <span style="font-size: 0.8em; opacity: 0.7;">管理 (見本クリックでコピー)</span>
                     <span class="settings-icon" title="配色選択へ戻る" onclick="toggleView()">🔙</span>
                 </div>
-
                 <div class="section-title">ファイル保存・読込</div>
                 <div class="btn-grid">
                     <button onclick="exportToFile()">ファイル保存</button>
                     <button onclick="document.getElementById('file-input').click()">ファイル読込</button>
                     <input type="file" id="file-input" class="hidden" accept=".json" onchange="importFromFile(event)">
                 </div>
-
-                <div class="section-title">登録データ編集</div>
                 <div id="manage-list"></div>
-                
                 <div class="section-title" style="color:red; border-color:red; margin-top:20px;">リセット</div>
                 <button onclick="resetToDefault()" style="width:100%; background:#ffeeee; color:red; font-weight:bold; border-color:#fcc;">初期状態に戻す</button>
             </div>
@@ -156,27 +153,15 @@
     </details>
 </div>
 
-<section class="hint-section">
-    <div class="size-l">使い方のコツ</div>
-    <p class="size-m">
-        右上のメニューから背景色と文字色を切り替えて、最も目が疲れにくい組み合わせを探してください。<br>
-        気に入った色の組み合わせが見つかったら、そのカラーコードをメモしてStylus等のユーザーCSSに適用することをお勧めします。
-    </p>
-</section>
-
 <script>
-// 厳選：目に優しい初期配色データ
     const initialData = {
         bg: [
-            // 暖色系・ペーパー系 (6色)
             { name: '生成り(文庫)', color: '#f4f1e6' },
             { name: '和紙', color: '#fcfaf2' },
             { name: 'アイボリー', color: '#fdfaf2' },
             { name: '紅茶', color: '#f3e8d2' },
             { name: 'コミック紙', color: '#e6e6e6' },
             { name: 'ノスタルジー', color: '#e8d4ad' },
-            
-            // 暗色系・リラックス系 (6色)
             { name: '消炭色', color: '#2d2d2d' },
             { name: 'チョコ(夜)', color: '#241e1a' },
             { name: 'ディープオーシャン', color: '#0f1419' },
@@ -185,20 +170,26 @@
             { name: 'アッシュグレー', color: '#3c3f41' }
         ],
         text: [
-            // 暗色系文字 (3色)
             { name: '墨(標準)', color: '#333333' },
             { name: '漆黒', color: '#000000' },
             { name: 'チャコール', color: '#444444' },
-            
-            // 淡色系文字 (3色)
             { name: '読書用白', color: '#d1d1d1' },
             { name: 'ソフトホワイト', color: '#e0e0e0' },
             { name: 'サンドグレー', color: '#b8b8b8' }
         ]
     };
 
-    let customBg = JSON.parse(localStorage.getItem('v5_bg')) || [...initialData.bg];
-    let customText = JSON.parse(localStorage.getItem('v5_text')) || [...initialData.text];
+    let customBg = JSON.parse(localStorage.getItem('v8_bg')) || [...initialData.bg];
+    let customText = JSON.parse(localStorage.getItem('v8_text')) || [...initialData.text];
+
+    let toastTimer;
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.innerText = message;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 2000);
+    }
 
     function toggleView() {
         document.getElementById('main-view').classList.toggle('hidden');
@@ -206,37 +197,45 @@
         if (!document.getElementById('settings-view').classList.contains('hidden')) renderManageList();
     }
 
-    function handleRegister(type) {
-        const picker = document.getElementById('reg-picker');
-        const code = document.getElementById('reg-code');
-        const nameInput = document.getElementById('reg-name');
-        const color = code.value || picker.value;
-        const name = nameInput.value || `新規${customBg.length + customText.length + 1}`;
-
-        if (type === 'bg') customBg.push({ name, color });
-        else customText.push({ name, color });
-        
-        saveAndRender();
-        code.value = ''; nameInput.value = '';
+    function copyToClipboard(color, name, typeLabel) {
+        navigator.clipboard.writeText(color).then(() => {
+            showToast(`コピーしました ${typeLabel}：${name}`);
+        });
     }
 
     function renderManageList() {
         const listEl = document.getElementById('manage-list');
         listEl.innerHTML = '';
-        const createRow = (item, index, type) => {
-            const div = document.createElement('div');
-            div.className = 'manage-item';
-            div.innerHTML = `
-                <div style="width:14px; height:14px; background:${item.color}; border:1px solid #999; border-radius:2px;"></div>
-                <input type="text" value="${item.name}" onchange="editName('${type}', ${index}, this.value)">
-                <button class="del-btn" onclick="deleteItem('${type}', ${index})">✕</button>
-            `;
-            listEl.appendChild(div);
+        const buildList = (list, label, type) => {
+            listEl.innerHTML += `<div class="section-title">${label}の管理</div>`;
+            list.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.className = 'manage-item';
+                div.innerHTML = `
+                    <div class="color-sample" style="background:${item.color};" 
+                         onclick="copyToClipboard('${item.color}', '${item.name}', '${label}')" title="コードをコピー"></div>
+                    <input type="text" value="${item.name}" onchange="editName('${type}', ${i}, this.value)">
+                    <button class="del-btn" onclick="deleteItem('${type}', ${i})">✕</button>
+                `;
+                listEl.appendChild(div);
+            });
         };
-        listEl.innerHTML += '<div class="section-title">背景色のリスト</div>';
-        customBg.forEach((item, i) => createRow(item, i, 'bg'));
-        listEl.innerHTML += '<div class="section-title">文字色のリスト</div>';
-        customText.forEach((item, i) => createRow(item, i, 'text'));
+        buildList(customBg, '背景色', 'bg');
+        buildList(customText, '文字色', 'text');
+    }
+
+    function handleRegister(type) {
+        const picker = document.getElementById('reg-picker');
+        const code = document.getElementById('reg-code');
+        const nameInput = document.getElementById('reg-name');
+        const color = code.value || picker.value;
+        if (!color) return;
+        const name = nameInput.value || `新規${customBg.length + customText.length + 1}`;
+        if (type === 'bg') customBg.push({ name, color });
+        else customText.push({ name, color });
+        saveAndRender();
+        code.value = ''; nameInput.value = '';
+        showToast(`新色を追加しました：${name}`);
     }
 
     function editName(type, index, newName) {
@@ -246,10 +245,12 @@
     }
 
     function deleteItem(type, index) {
+        const name = type === 'bg' ? customBg[index].name : customText[index].name;
         if (type === 'bg') customBg.splice(index, 1);
         else customText.splice(index, 1);
         saveAndRender();
         renderManageList();
+        showToast(`削除しました：${name}`);
     }
 
     function exportToFile() {
@@ -258,9 +259,10 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `reading-color-presets.json`;
+        a.download = `my-reading-presets.json`;
         a.click();
         URL.revokeObjectURL(url);
+        showToast('ファイルを保存しました');
     }
 
     function importFromFile(event) {
@@ -273,23 +275,24 @@
                 if (data.bg && data.text) {
                     customBg = data.bg; customText = data.text;
                     saveAndRender(); renderManageList();
-                    alert('設定をインポートしました。');
+                    showToast('設定をインポートしました');
                 }
-            } catch (err) { alert('ファイルの形式が正しくありません。'); }
+            } catch (err) { alert('不正なファイルです'); }
         };
         reader.readAsText(file);
     }
 
     function resetToDefault() {
-        if (confirm('初期の配色リストに戻しますか？（追加した色は消去されます）')) {
+        if (confirm('初期状態に戻しますか？')) {
             customBg = [...initialData.bg]; customText = [...initialData.text];
             saveAndRender(); renderManageList();
+            showToast('初期状態にリセットしました');
         }
     }
 
     function saveAndRender() {
-        localStorage.setItem('v5_bg', JSON.stringify(customBg));
-        localStorage.setItem('v5_text', JSON.stringify(customText));
+        localStorage.setItem('v8_bg', JSON.stringify(customBg));
+        localStorage.setItem('v8_text', JSON.stringify(customText));
         render();
     }
 
